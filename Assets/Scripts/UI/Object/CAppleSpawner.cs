@@ -10,10 +10,48 @@ public class CAppleSpawner : MonoBehaviour
     public float padding = 20f;     // 간격을 좀 더 줄임
     private RectTransform canvasRect;
 
+    // 숫자별 가중치 (높을수록 더 자주 나옴)
+    private Dictionary<int, int> numberWeights = new Dictionary<int, int>()
+    {
+        {1, 5},  // 1은 적게
+        {2, 10}, // 2는 많이
+        {3, 10}, // 3은 많이
+        {4, 10}, // 4는 많이
+        {5, 10}, // 5는 많이
+        {6, 10}, // 6은 많이
+        {7, 10}, // 7은 많이
+        {8, 5},  // 8은 적게
+        {9, 5}   // 9는 적게
+    };
+
     void Start()
     {
         canvasRect = GetComponent<RectTransform>();
         SpawnApples();
+    }
+
+    // 가중치 기반 랜덤 숫자 생성
+    private int GetWeightedRandomNumber()
+    {
+        int totalWeight = 0;
+        foreach (var weight in numberWeights.Values)
+        {
+            totalWeight += weight;
+        }
+
+        int randomValue = Random.Range(0, totalWeight);
+        int currentWeight = 0;
+
+        foreach (var pair in numberWeights)
+        {
+            currentWeight += pair.Value;
+            if (randomValue < currentWeight)
+            {
+                return pair.Key;
+            }
+        }
+
+        return 5; // 기본값
     }
 
     void SpawnApples()
@@ -47,7 +85,8 @@ public class CAppleSpawner : MonoBehaviour
                 appleRect.anchoredPosition = position;
                 appleRect.sizeDelta = new Vector2(appleSize, appleSize);
 
-                int randomNumber = Random.Range(1, 10);
+                // 가중치 기반 랜덤 숫자 생성
+                int randomNumber = GetWeightedRandomNumber();
                 apple.GetComponent<CApple>().SetNumber(randomNumber);
             }
         }

@@ -12,8 +12,13 @@ public class CTouchArea : MonoBehaviour
     private List<CApple> selectedApples = new List<CApple>();
     private RectTransform canvasRect;
     private Image selectionBox;
+    private Image selectionBorder; // 테두리용 이미지
     private Canvas canvas;
     private GameService gameService;
+
+    private Color normalColor = new Color(1, 0, 0, 0.2f); // 빨간색 (기본)
+    private Color validColor = new Color(1, 1, 0, 0.2f);   // 노란색 (합이 10일 때)
+    private Color borderColor = new Color(1, 1, 1, 0.8f);  // 테두리 색상 (흰색)
 
     void Start()
     {
@@ -30,12 +35,23 @@ public class CTouchArea : MonoBehaviour
         canvasRect = GetComponent<RectTransform>();
         canvas = GetComponentInParent<Canvas>();
         
+
+        
+        // 테두리용 UI Image 생성
+        GameObject borderObj = new GameObject("SelectionBorder");
+        borderObj.transform.SetParent(transform, false);
+        selectionBorder = borderObj.AddComponent<Image>();
+        selectionBorder.color = borderColor;
+        selectionBorder.enabled = false;
+
+        
         // 선택 영역을 그릴 UI Image 생성
         GameObject selectionBoxObj = new GameObject("SelectionBox");
         selectionBoxObj.transform.SetParent(transform, false);
         selectionBox = selectionBoxObj.AddComponent<Image>();
-        selectionBox.color = new Color(1, 0, 0, 0.2f);
+        selectionBox.color = normalColor;
         selectionBox.enabled = false;
+
     }
 
     void Update()
@@ -119,6 +135,16 @@ public class CTouchArea : MonoBehaviour
                 selectedApples.Add(apple);
             }
         }
+
+        // 선택된 사과들의 합이 10인지 확인하고 색상 변경
+        int sum = 0;
+        foreach (CApple apple in selectedApples)
+        {
+            sum += apple.number;
+        }
+
+        // 합이 10이면 노란색, 아니면 빨간색
+        selectionBox.color = (sum == 10) ? validColor : normalColor;
     }
 
     void ClearSelection()
@@ -138,9 +164,16 @@ public class CTouchArea : MonoBehaviour
         float x = Mathf.Min(touchStart.x, touchEnd.x);
         float y = Mathf.Min(touchStart.y, touchEnd.y);
 
+        // 선택 영역 설정
         selectionBox.rectTransform.sizeDelta = new Vector2(width, height);
         selectionBox.rectTransform.anchoredPosition = new Vector2(x + width/2, y + height/2);
         selectionBox.enabled = true;
+
+        // 테두리 설정 (선택 영역보다 약간 크게)
+        float borderWidth = 5f; // 테두리 두께
+        selectionBorder.rectTransform.sizeDelta = new Vector2(width + borderWidth * 2, height + borderWidth * 2);
+        selectionBorder.rectTransform.anchoredPosition = new Vector2(x + width/2, y + height/2);
+        selectionBorder.enabled = true;
     }
 
     void CheckSelectedApples()
@@ -161,6 +194,7 @@ public class CTouchArea : MonoBehaviour
         }
 
         selectionBox.enabled = false;
+        selectionBorder.enabled = false;
     }
 
     bool IsInSelectionBox(Vector2 position)
