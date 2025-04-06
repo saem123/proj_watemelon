@@ -13,6 +13,9 @@ public class CApple : MonoBehaviour
     public Sprite selectedSprite;
     private bool isSelected = false;
 
+    public Color selectedTextColor = new Color(0.24f, 0.04f, 0.03f); // #3e0a08
+    public Color normalTextColor = Color.white;
+
     public void SetNumber(int value)
     {
         number = value;
@@ -23,6 +26,7 @@ public class CApple : MonoBehaviour
     {
         isSelected = selected;
         appleImage.sprite = selected ? selectedSprite : normalSprite;
+        numberText.color = selected ? selectedTextColor : normalTextColor;
     }
 
     public bool IsSelected()
