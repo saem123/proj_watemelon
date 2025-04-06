@@ -63,3 +63,16 @@ crashlytics-build.properties
 Icon?
 ehthumbs.db
 Thumbs.db
+
+# User Settings
+[Uu]ser[Ss]ettings/
+
+# MemoryCaptures can get excessive in size.
+[Mm]emoryCaptures/
+
+# Packed Addressables
+[Aa]ssets/[Aa]ddressable[Aa]ssets[Dd]ata/*/*.bin*
+
+# Temporary auto-generated Android Assets
+[Aa]ssets/[Ss]treamingAssets/aa.meta
+[Aa]ssets/[Ss]treamingAssets/aa/*
