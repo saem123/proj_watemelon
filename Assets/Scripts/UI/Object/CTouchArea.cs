@@ -35,15 +35,12 @@ public class CTouchArea : MonoBehaviour
         canvasRect = GetComponent<RectTransform>();
         canvas = GetComponentInParent<Canvas>();
         
-
-        
         // 테두리용 UI Image 생성
         GameObject borderObj = new GameObject("SelectionBorder");
         borderObj.transform.SetParent(transform, false);
         selectionBorder = borderObj.AddComponent<Image>();
         selectionBorder.color = borderColor;
         selectionBorder.enabled = false;
-
         
         // 선택 영역을 그릴 UI Image 생성
         GameObject selectionBoxObj = new GameObject("SelectionBox");
@@ -51,11 +48,13 @@ public class CTouchArea : MonoBehaviour
         selectionBox = selectionBoxObj.AddComponent<Image>();
         selectionBox.color = normalColor;
         selectionBox.enabled = false;
-
     }
 
     void Update()
     {
+        // 게임이 진행 중이 아니면 터치 무시
+        if (!gameService.IsPlaying()) return;
+
         // 터치 입력 처리
         if (Input.touchCount > 0)
         {

@@ -24,12 +24,12 @@ public class GameService : Service<GameService>
     private ReactiveProperty<InGameState> _gameState = new ReactiveProperty<InGameState>(InGameState.Ready);
     public IReadOnlyReactiveProperty<InGameState> GameState => _gameState;
     
-    // 게임 시간 관리
-    private ReactiveProperty<float> _gameTime = new ReactiveProperty<float>(0f);
+    // 게임 시간 관리 (1에서 0으로 줄어듦)
+    private ReactiveProperty<float> _gameTime = new ReactiveProperty<float>(1f);
     public IReadOnlyReactiveProperty<float> GameTime => _gameTime;
     
     // 게임 제한 시간 (초)
-    private float _timeLimit = 60f;
+    private float _timeLimit = 15f;
     public float TimeLimit
     {
         get => _timeLimit;
@@ -39,7 +39,7 @@ public class GameService : Service<GameService>
             // 시간 제한이 변경되면 게임 시간을 리셋
             if (_gameState.Value == InGameState.Playing)
             {
-                _gameTime.Value = 0f;
+                _gameTime.Value = 1f;
             }
         }
     }
@@ -47,11 +47,20 @@ public class GameService : Service<GameService>
     // 게임 시간 업데이트를 위한 IDisposable
     private IDisposable _timeUpdateDisposable;
     
+    // 상태 변화 스트림
+    public IObservable<InGameState> OnGameStateChanged => _gameState.AsObservable();
+    
+    // 점수 변화 스트림
+    public IObservable<int> OnScoreChanged => Score.AsObservable();
+    
+    // 시간 변화 스트림
+    public IObservable<float> OnTimeChanged => _gameTime.AsObservable();
+    
     // 게임 시작 시 초기화
     public void InitializeGame()
     {
         Score.Value = 0;
-        _gameTime.Value = 0f;
+        _gameTime.Value = 1f;
         _gameState.Value = InGameState.Ready;
     }
     
@@ -68,10 +77,11 @@ public class GameService : Service<GameService>
                 .Where(_ => _gameState.Value == InGameState.Playing)
                 .Subscribe(_ =>
                 {
-                    _gameTime.Value += Time.deltaTime;
+                    float elapsedTime = (1f - _gameTime.Value) * _timeLimit + Time.deltaTime;
+                    _gameTime.Value = Mathf.Max(0f, 1f - (elapsedTime / _timeLimit));
                     
-                    // 시간 제한에 도달하면 게임 오버
-                    if (_gameTime.Value >= _timeLimit)
+                    // 시간이 0이 되면 게임 오버
+                    if (_gameTime.Value <= 0f)
                     {
                         EndGame();
                     }
@@ -130,19 +140,19 @@ public class GameService : Service<GameService>
     // 게임 시간 초기화
     public void ResetGameTime()
     {
-        _gameTime.Value = 0f;
+        _gameTime.Value = 1f;
     }
     
     // 남은 시간 계산 (초)
     public float GetRemainingTime()
     {
-        return Mathf.Max(0, _timeLimit - _gameTime.Value);
+        return _gameTime.Value * _timeLimit;
     }
     
-    // 게임 진행률 계산 (0~1)
+    // 게임 진행률 계산 (1~0)
     public float GetGameProgress()
     {
-        return Mathf.Clamp01(_gameTime.Value / _timeLimit);
+        return _gameTime.Value;
     }
     
     // 게임이 진행 중인지 확인
@@ -168,6 +178,36 @@ public class GameService : Service<GameService>
     {
         return _gameState.Value == InGameState.Ready;
     }
+    
+    // 특정 상태로 변경될 때 스트림
+    public IObservable<Unit> OnGameStateChangedTo(InGameState state)
+    {
+        return _gameState
+            .Where(s => s == state)
+            .AsUnitObservable();
+    }
+    
+    // 게임 시작 스트림
+    public IObservable<Unit> OnGameStarted => OnGameStateChangedTo(InGameState.Playing);
+    
+    // 게임 일시 정지 스트림
+    public IObservable<Unit> OnGamePaused => OnGameStateChangedTo(InGameState.Paused);
+    
+    // 게임 종료 스트림
+    public IObservable<Unit> OnGameOver => OnGameStateChangedTo(InGameState.GameOver);
+    
+    // 게임 준비 스트림
+    public IObservable<Unit> OnGameReady => OnGameStateChangedTo(InGameState.Ready);
+    
+    // 남은 시간 스트림
+    public IObservable<float> OnRemainingTimeChanged => _gameTime
+        .Select(_ => GetRemainingTime())
+        .DistinctUntilChanged();
+    
+    // 게임 진행률 스트림
+    public IObservable<float> OnGameProgressChanged => _gameTime
+        .Select(_ => GetGameProgress())
+        .DistinctUntilChanged();
     
     // 서비스 종료 시 정리
     private void OnDestroy()

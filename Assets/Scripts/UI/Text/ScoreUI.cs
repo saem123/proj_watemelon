@@ -16,7 +16,7 @@ public class ScoreUI : MonoBehaviour
         // 스코어 변경을 구독하여 UI 업데이트
         gameService.Score.Subscribe(score =>
         {
-            scoreText.text = $"Score: {score}";
+            scoreText.text = $"{score}";
         }).AddTo(this);
     }
 } 
